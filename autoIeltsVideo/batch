@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# for each .mp3 file in audio/tts directory, start a new process with ./run.sh
+
+for f in audio/tts/*.mp3; do
+    CMD="./run.sh fake video/smale.mp4 $f"
+    echo "Processing $f file: $CMD" >> run.log
+    eval $CMD
+    # check the result and log result to file run.log
+    if [ $? -eq 0 ]; then
+        echo "Success" >> run.log
+    else
+        echo "Failed" >> run.log
+        exit 1
+    fi
+
+done

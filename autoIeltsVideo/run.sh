@@ -20,7 +20,7 @@ function main() {
     return
   elif [ $1 = "info" ]; then
     mediaInfo $2
-    return
+
   fi
 
   #设置工作目录为脚本目录
@@ -42,7 +42,7 @@ function main() {
     if [ $# -ne 5 ]; then
       echo "main: leftVideo rightVideo audio splitTime"
       main "help"
-      return
+      exit 1
     fi
     #步骤
     # 1.对口型，按照时间点，分别对左右视频的口型
@@ -85,12 +85,12 @@ function main() {
     #判断返回结果
     if [ ! -f $FAKED_LEFT_VIDEO ]; then
       echo "failed to create $FAKED_LEFT_VIDEO"
-      return
+      exit 1
     fi
     fakeVideo $RIGHT_VIDEO_SRC_PATH $RIGHT_AUDIO_PATH $FAKED_RIGHT_VIDEO
     if [ ! -f $FAKED_RIGHT_VIDEO ]; then
       echo "failed to create $FAKED_RIGHT_VIDEO"
-      return
+      exit 1
     fi
 
     #合并左右视频
@@ -113,7 +113,7 @@ function main() {
     mergeInApp $APP_IMAGE $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $FINAL_SPEC_NAME
     if [ ! -f $FINAL_SPEC_NAME ]; then
       echo "failed to create $RESULT_VIDEO"
-      return
+      exit 1
     fi
 
   elif [ $1 = "splitAudio" ] || [ $1 = "split" ]; then
@@ -121,7 +121,7 @@ function main() {
     if [ $# -ne 3 ]; then
       echo "splitAudio: audioFile time"
       main "help"
-      return
+      exit 1
     fi
 
     AUDIO_NAME=${2%.*}
@@ -155,7 +155,7 @@ function main() {
     if [ $# -ne 3 ]; then
       echo "merge2Videos: leftVideo rightVideo"
       main "help"
-      return
+      exit 1
     fi
     #去掉$2中的路径，只保留文件名
     LEFT_VIDEO=${2##*/}
@@ -169,7 +169,7 @@ function main() {
     if [ $# -ne 2 ]; then
       echo "mergeFinalVideo: video"
       main "help"
-      return
+      exit 1
     fi
     #去掉$2中的路径，只保留文件名
     VIDEO=${2##*/}
@@ -180,7 +180,7 @@ function main() {
     if [ $# -ne 3 ]; then
       echo "mergeAllVideos: leftVideo rightVideo"
       main "help"
-      return
+      exit 1
     fi
     LEFT_VIDEO_PATH=$2
     RIGHT_VIDEO_PATH=$3
@@ -200,7 +200,7 @@ function main() {
     if [ $# -ne 3 ]; then
       echo "mergeInApp: leftVideo rightVideo"
       main "help"
-      return
+      exit 1
     fi
     LEFT_VIDEO_PATH=$2
     RIGHT_VIDEO_PATH=$3
@@ -228,11 +228,11 @@ fakeVideo() {
   #判断是否存在该文件
   if [ ! -f $iVIDEO ]; then
     echo "file $iVIDEO not exists"
-    return
+    exit 1
   fi
   if [ ! -f $iAUDIO ]; then
     echo "file $iAUDIO not exists"
-    return
+    exit 1
   fi
   if [ -f $iFAKED_VIDEO ]; then
     #询问是否删除该文件，等待3秒，若未输入，缺省为不删除
@@ -256,7 +256,7 @@ fakeVideo() {
   #判断是否生成了结果文件
   if [ ! -f results/result_voice.mp4 ]; then
     echo "failed to create results/result_voice.mp4"
-    return
+    exit 1
   fi
   mv results/result_voice.mp4 $CURRENT_DIR"/"$iFAKED_VIDEO
   echo "faked video: $iFAKED_VIDEO created"
@@ -287,7 +287,7 @@ merge2Videos() {
 
   if [ $? -ne 0 ]; then
     echo "mergeVideos failed"
-    return
+    exit 1
   fi
   echo "merged video: $iRESULT_VIDEO created"
 }
@@ -307,7 +307,7 @@ mergeFinalVideo() {
 
   if [ $? -ne 0 ]; then
     echo "mergeFinalVideo failed"
-    return
+    exit 1
   fi
   echo "merged final video: $iRESULT_VIDEO created"
 }
@@ -333,7 +333,7 @@ mergeInApp() {
 
   if [ $? -ne 0 ]; then
     echo "mergeInApp failed"
-    return
+    exit 1
   fi
   echo "merged inapp video: $iRESULT_VIDEO created"
 }
@@ -368,7 +368,7 @@ splitAudio() {
   #检查是否生成了音频iSubAudio1
   if [ ! -f $iSubAudio1 ]; then
     echo "failed to create $iSubAudio1"
-    return
+    exit 1
   fi
   #将音频iAudio的时间点iSplitPoint之前静音，维持音频长度，生成音频iSubAudio2
   CMD2="ffmpeg -i $iAudio -af \"volume=enable='between(t,0,$iSplitPoint)':volume=0\" $iSubAudio2"
@@ -377,7 +377,7 @@ splitAudio() {
   #检查是否生成了音频iSubAudio2
   if [ ! -f $iSubAudio2 ]; then
     echo "failed to create $iSubAudio2"
-    return
+    exit 1
   fi
   echo "splitAudio $iAudio $iSplitPoint $iSubAudio1 $iSubAudio2"" created"
 }
