@@ -73,8 +73,8 @@ function main() {
     RIGHT_VIDEO_SRC_FILE=${RIGHT_VIDEO_SRC_PATH##*/}
     LEFT_VIDEO_SRC_FILENAME=${LEFT_VIDEO_SRC_FILE%.*}
     RIGHT_VIDEO_SRC_FILENAME=${RIGHT_VIDEO_SRC_FILE%.*}
-    FAKED_LEFT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"1_"$LEFT_VIDEO_SRC_FILE
-    FAKED_RIGHT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"2_"$RIGHT_VIDEO_SRC_FILE
+    FAKED_LEFT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}s_1_"$LEFT_VIDEO_SRC_FILE
+    FAKED_RIGHT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}s_2_"$RIGHT_VIDEO_SRC_FILE
     LRMERGE_VIDEO=$MERGE_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
 
     fakeVideo $LEFT_VIDEO_SRC_PATH $LEFT_AUDIO_PATH $FAKED_LEFT_VIDEO
@@ -127,7 +127,13 @@ function main() {
       main "help"
       return
     fi
-    FAKED=$FAKED_DIR$3$2
+    #本地变量，去掉$2中的路径，只保留文件名
+    VIDEO_FILE=${2##*/}
+    #去掉$3中的路径，只保留文件名，去掉扩展名
+    AUDIO=${3##*/}
+    AUDIO_NAME=${AUDIO%.*}
+
+    FAKED=$FAKED_DIR$AUDIO_NAME"_"$VIDEO_FILE
     fakeVideo "$2" "$3" $FAKED
   elif [ $1 = "merge2Videos" ] || [ $1 = "merge2" ]; then
     # mergeVideos: leftVideo rightVideo
@@ -138,9 +144,10 @@ function main() {
     fi
     #去掉$2中的路径，只保留文件名
     LEFT_VIDEO=${2##*/}
+    LEFT_VIDEO_NAME=${LEFT_VIDEO%.*}
     #去掉$3中的路径，只保留文件名
     RIGHT_VIDEO=${3##*/}
-    MERGED=$MERGE_DIR"$LEFT_VIDEO$RIGHT_VIDEO"
+    MERGED=$MERGE_DIR$LEFT_VIDEO_NAME"_"$RIGHT_VIDEO
     merge2Videos "$2" "$3" $MERGED
   elif [ $1 = "mergeFinalVideo" ] || [ $1 = "final" ]; then
     # mergeFinalVideo: video
