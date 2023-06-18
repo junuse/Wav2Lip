@@ -8,11 +8,13 @@ function main() {
     #说明后面的参数
     echo "SUBCMD:"
     echo "  help:                     print help info"
-    echo "  main:                     leftVideo rightVideo audio"
+    echo "  main:                     leftVideo rightVideo audio splitTime"
     echo "  fakeVideo/fake:           srcVideo audio"
-    echo "  mergeVideos/merge:        leftVideo rightVideo"
+    echo "  merge2Videos/merge2:      leftVideo rightVideo"
     echo "  mergeFinalVideo/final:    video"
+    echo "  mergeAllVideos/merge:     leftVideo rightVideo"
     echo "  info:                     mediaFile"
+    echo "  splitAudio/split:         audioFile time"
     return
   elif [ $1 = "info" ]; then
     mediaInfo $2
@@ -28,14 +30,15 @@ function main() {
   VIDEO_DIR="video/"
   AUDIO_DIR="audio/"
   FAKED_DIR="faked/"
+  RESULT_DIR="result/"
 
   APP_IMAGE=$IMAGE_DIR"ielts-app.jpg"
   RESULT_VIDEO="result.mp4"
 
   if [ $1 = "main" ]; then
     # main: leftVideo rightVideo audio"
-    if [ $# -ne 4 ]; then
-      echo "main: leftVideo rightVideo audio"
+    if [ $# -ne 5 ]; then
+      echo "main: leftVideo rightVideo audio splitTime"
       main "help"
       return
     fi
@@ -44,38 +47,79 @@ function main() {
     # 2.合并左右视频
     # 3.将合并后的视频嵌入到图片中
 
-    # main: leftVideo rightVideo audio"
-    LEFT_VIDEO=$VIDEO_DIR$2
-    RIGHT_VIDEO=$VIDEO_DIR$3
-    AUDIO=$AUDIO_DIR"$4"
+    # main: leftVideo rightVideo audio splitTime"
+    # PATH, directory, file
+    # FILE, filename.extension
+    # NAME, filename,no extension
+    LEFT_VIDEO_SRC_PATH=$2
+    RIGHT_VIDEO_SRC_PATH=$3
+    AUDIO_SRC_PATH="$4"
+    SPLIT_TIME=$5
 
-    #working file
-    FAKED_LEFT_VIDEO=$FAKED_DIR$4$2
-    FAKED_RIGHT_VIDEO=$FAKED_DIR$4$3
-    LRMERGE_VIDEO=$MERGE_DIR"$2$3"
+    AUDIO_SRC_FILE=${AUDIO_SRC_PATH##*/}
+    AUDIO_SRC_FILENAME=${AUDIO_SRC_FILE%.*}
+    AUDIO_SRC_FILE_EXT=${AUDIO_SRC_FILE##*.}
 
     #TODO, 将AUDIO按照时间点分为left right 口型audio
-    fakeVideo $LEFT_VIDEO $AUDIO $FAKED_LEFT_VIDEO
+    #将audio文件名的扩展名之前加上数字1，作为左视频的audio文件名
+    LEFT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}s_1."$AUDIO_SRC_FILE_EXT
+    #将audio文件名的扩展名之前加上数字2，作为右视频的audio文件名
+    RIGHT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}s_2."$AUDIO_SRC_FILE_EXT
+
+    splitAudio $AUDIO_SRC_PATH $SPLIT_TIME $LEFT_AUDIO_PATH $RIGHT_AUDIO_PATH
+
+    #对左右视频的口型
+    LEFT_VIDEO_SRC_FILE=${LEFT_VIDEO_SRC_PATH##*/}
+    RIGHT_VIDEO_SRC_FILE=${RIGHT_VIDEO_SRC_PATH##*/}
+    LEFT_VIDEO_SRC_FILENAME=${LEFT_VIDEO_SRC_FILE%.*}
+    RIGHT_VIDEO_SRC_FILENAME=${RIGHT_VIDEO_SRC_FILE%.*}
+    FAKED_LEFT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"1_"$LEFT_VIDEO_SRC_FILE
+    FAKED_RIGHT_VIDEO=$FAKED_DIR$AUDIO_SRC_FILENAME"2_"$RIGHT_VIDEO_SRC_FILE
+    LRMERGE_VIDEO=$MERGE_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
+
+    fakeVideo $LEFT_VIDEO_SRC_PATH $LEFT_AUDIO_PATH $FAKED_LEFT_VIDEO
     #判断返回结果
     if [ ! -f $FAKED_LEFT_VIDEO ]; then
       echo "failed to create $FAKED_LEFT_VIDEO"
       return
     fi
-    fakeVideo $RIGHT_VIDEO $AUDIO $FAKED_RIGHT_VIDEO
+    fakeVideo $RIGHT_VIDEO_SRC_PATH $RIGHT_AUDIO_PATH $FAKED_RIGHT_VIDEO
     if [ ! -f $FAKED_RIGHT_VIDEO ]; then
       echo "failed to create $FAKED_RIGHT_VIDEO"
       return
     fi
-    mergeVideos $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $LRMERGE_VIDEO
+
+    #合并左右视频
+    merge2Videos $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $LRMERGE_VIDEO
     if [ ! -f $LRMERGE_VIDEO ]; then
       echo "failed to create $LRMERGE_VIDEO"
       return
     fi
-    mergeFinalVideo $APP_IMAGE $LRMERGE_VIDEO $RESULT_VIDEO
+
+    #将合并后的视频嵌入到图片中
+    FINAL_SPEC_NAME=$RESULT_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
+    mergeFinalVideo $APP_IMAGE $LRMERGE_VIDEO $FINAL_SPEC_NAME
     if [ ! -f $RESULT_VIDEO ]; then
       echo "failed to create $RESULT_VIDEO"
       return
     fi
+  elif [ $1 = "splitAudio" ] || [ $1 = "split" ]; then
+    # splitAudio: audioFile time
+    if [ $# -ne 3 ]; then
+      echo "splitAudio: audioFile time"
+      main "help"
+      return
+    fi
+
+    AUDIO_NAME=${2%.*}
+    AUDIO=$2
+    SPLIT_TIME=$3
+    #将audio文件名的扩展名之前加上数字1，作为左视频的audio文件名
+    LEFT_AUDIO=$AUDIO_NAME"_${SPLIT_TIME}s_1."${2##*.}
+    #将audio文件名的扩展名之前加上数字2，作为右视频的audio文件名
+    RIGHT_AUDIO=$AUDIO_NAME"_${SPLIT_TIME}s_2."${2##*.}
+
+    splitAudio $2 $SPLIT_TIME $LEFT_AUDIO $RIGHT_AUDIO
   elif [ $1 = "fakeVideo" ] || [ $1 = "fake" ]; then
     # fakeVideo: srcVideo audio
     if [ $# -ne 3 ]; then
@@ -84,16 +128,20 @@ function main() {
       return
     fi
     FAKED=$FAKED_DIR$3$2
-    fakeVideo $VIDEO_DIR"$2" $AUDIO_DIR"$3" $FAKED
-  elif [ $1 = "mergeVideos" ] || [ $1 = "merge" ]; then
+    fakeVideo "$2" "$3" $FAKED
+  elif [ $1 = "merge2Videos" ] || [ $1 = "merge2" ]; then
     # mergeVideos: leftVideo rightVideo
     if [ $# -ne 3 ]; then
-      echo "mergeVideos: leftVideo rightVideo"
+      echo "merge2Videos: leftVideo rightVideo"
       main "help"
       return
     fi
-    MERGED=$MERGE_DIR"$2$3"
-    mergeVideos $VIDEO_DIR"$2" $VIDEO_DIR"$3" $MERGED
+    #去掉$2中的路径，只保留文件名
+    LEFT_VIDEO=${2##*/}
+    #去掉$3中的路径，只保留文件名
+    RIGHT_VIDEO=${3##*/}
+    MERGED=$MERGE_DIR"$LEFT_VIDEO$RIGHT_VIDEO"
+    merge2Videos "$2" "$3" $MERGED
   elif [ $1 = "mergeFinalVideo" ] || [ $1 = "final" ]; then
     # mergeFinalVideo: video
     if [ $# -ne 2 ]; then
@@ -102,7 +150,22 @@ function main() {
       return
     fi
     MERGED=$CURRENT_DIR"/result.mp4"
-    mergeFinalVideo $APP_IMAGE $FAKED_DIR"$2" $MERGED
+    mergeFinalVideo $APP_IMAGE "$2" $MERGED
+  elif [ $1 = "mergeAllVideos" ] || [ $1 = "merge" ]; then
+    # mergeAllVideos: leftVideo rightVideo
+    if [ $# -ne 3 ]; then
+      echo "mergeAllVideos: leftVideo rightVideo"
+      main "help"
+      return
+    fi
+    #去掉$2中的路径，只保留文件名
+    LEFT_VIDEO=${2##*/}
+    #去掉$3中的路径，只保留文件名
+    RIGHT_VIDEO=${3##*/}
+    MERGED1=$MERGE_DIR"$LEFT_VIDEO$RIGHT_VIDEO"
+    merge2Videos "$2" "$3" $MERGED1
+    MERGED2=$CURRENT_DIR"/result.mp4"
+    mergeFinalVideo $APP_IMAGE $MERGED1 $MERGED2
   else
     echo "unknown subcmd: $1"
     main "help"
@@ -126,7 +189,7 @@ fakeVideo() {
   fi
   if [ -f $iFAKED_VIDEO ]; then
     #询问是否删除该文件，等待3秒，若未输入，缺省为不删除
-    read -t 3 -p "file $iFAKED_VIDEO exists, delete it? [y/N]" DEL
+    read -t 6 -p "file $iFAKED_VIDEO exists, delete it? [y/N]" DEL
     #如果DEL为空或者不是y，则缺省为不删除
     if [ -z $DEL ] || [ $DEL != "y" ]; then
       echo "file $iFAKED_VIDEO exists, skip"
@@ -153,12 +216,12 @@ fakeVideo() {
   cd $CURRENT_DIR
 }
 
-mergeVideos() {
+merge2Videos() {
   iLEFT_VIDEO=$1
   iRIGHT_VIDEO=$2
   iRESULT_VIDEO=$3
   if [ -f $iRESULT_VIDEO ]; then
-    read -t 3 -p "file $iRESULT_VIDEO exists, delete it? [y/N]" DEL
+    read -t 6 -p "file $iRESULT_VIDEO exists, delete it? [y/N]" DEL
     if [ -z $DEL ] || [ $DEL != "y" ]; then
       echo "file $iRESULT_VIDEO exists, skip"
       return
@@ -167,9 +230,9 @@ mergeVideos() {
     fi
   fi
 
-  echo "mergeVideos $iLEFT_VIDEO $iRIGHT_VIDEO $iRESULT_VIDEO"
+  echo "merge2Videos $iLEFT_VIDEO $iRIGHT_VIDEO $iRESULT_VIDEO"
   #ffmpeg将两个视频合并为一个视频，左视频宽度为640，右视频宽度为368，视频高度为640，视频时长以左视频为准
-  CMD="ffmpeg -i $iLEFT_VIDEO -i $iRIGHT_VIDEO -filter_complex \"[0:v]scale=512:640,setsar=1[0v];[1:v]scale=512:640,setsar=1[1v];[0v][1v]hstack=inputs=2[v]\" -map \"[v]\" -map 0:a -c:a copy -c:v libx264 -crf 23 -preset veryfast -t $(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $iLEFT_VIDEO) $iRESULT_VIDEO"
+  CMD="ffmpeg -i $iLEFT_VIDEO -i $iRIGHT_VIDEO -filter_complex \"[0:v]scale=512:640,setsar=1[0v];[1:v]scale=512:640,setsar=1[1v];[0v][1v]hstack=inputs=2[v];[0:a][1:a]amix=inputs=2[a]\" -map \"[v]\" -map \"[a]\" -c:a aac -c:v libx264 -crf 23 -preset veryfast -t $(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $iLEFT_VIDEO) $iRESULT_VIDEO"
   echo "-------------------"
   echo $CMD
   echo "-------------------"
@@ -189,9 +252,6 @@ mergeFinalVideo() {
     rm -f $iRESULT_VIDEO
   fi
   echo "mergeFinalVideo $iAPP_IMAGE $iVIDEO $iRESULT_VIDEO"
-  #ffmpeg将视频output.mp4嵌入到图片ielts-app.jpg中，调整视频的宽度为图片宽度，调整视频高度为182，视频在图片的位置为248，视频时长以图片为准
-#  ffmpeg -i $iAPP_IMAGE -i $VIDEO -filter_complex "[1:v]scale=288:182[1v];[0:v][1v]overlay=0:66[outv]" -map "[outv]" -map 1:a -c:a copy -c:v libx264 -crf 23 -preset veryfast $iRESULT_VIDEO
-  #将上面的命令放到CMD，并执行
   CMD="ffmpeg -i $iAPP_IMAGE -i $iVIDEO -filter_complex \"[1:v]scale=288:182[1v];[0:v][1v]overlay=0:66[outv]\" -map \"[outv]\" -map 1:a -c:a copy -c:v libx264 -crf 23 -preset veryfast $iRESULT_VIDEO"
   echo "-------------------"
   echo $CMD
@@ -209,6 +269,44 @@ mediaInfo() {
   iMEDIA=$1
   CMD="ffmpeg -i $iMEDIA"
   eval $CMD
+}
+
+splitAudio() {
+  iAudio=$1
+  iSplitPoint=$2
+  iSubAudio1=$3
+  iSubAudio2=$4
+  #删除文件iSubAudio1和iSubAudio2，如果存在
+  if [ -f $iSubAudio1 ]; then
+    #询问是否删除，等待3s，默认不删除
+    read -t 6 -p "file $iSubAudio1 exists, delete it? [y/N]" DEL
+    #如果DEL为空或者不是y，则缺省为不删除
+    if [ -z $DEL ] || [ $DEL != "y" ]; then
+      echo "file $iSubAudio1 exists, skip"
+      return
+    else
+      rm -f $iSubAudio1 $iSubAudio2
+    fi
+  fi
+  #将音频iAudio的时间点iSplitPoint之后静音，维持音频长度，生成音频iSubAudio1
+  CMD1="ffmpeg -i $iAudio -af \"volume=enable='between(t,$iSplitPoint,100000)':volume=0\" $iSubAudio1"
+  echo $CMD1
+  eval $CMD1
+  #检查是否生成了音频iSubAudio1
+  if [ ! -f $iSubAudio1 ]; then
+    echo "failed to create $iSubAudio1"
+    return
+  fi
+  #将音频iAudio的时间点iSplitPoint之前静音，维持音频长度，生成音频iSubAudio2
+  CMD2="ffmpeg -i $iAudio -af \"volume=enable='between(t,0,$iSplitPoint)':volume=0\" $iSubAudio2"
+  echo $CMD2
+  eval $CMD2
+  #检查是否生成了音频iSubAudio2
+  if [ ! -f $iSubAudio2 ]; then
+    echo "failed to create $iSubAudio2"
+    return
+  fi
+  echo "splitAudio $iAudio $iSplitPoint $iSubAudio1 $iSubAudio2"" created"
 }
 
 #如果没有参数，则打印帮助信息
