@@ -156,7 +156,9 @@ function main() {
       main "help"
       return
     fi
-    MERGED=$CURRENT_DIR"/result.mp4"
+    #去掉$2中的路径，只保留文件名
+    VIDEO=${2##*/}
+    MERGED=$RESULT_DIR$VIDEO
     mergeFinalVideo $APP_IMAGE "$2" $MERGED
   elif [ $1 = "mergeAllVideos" ] || [ $1 = "merge" ]; then
     # mergeAllVideos: leftVideo rightVideo
@@ -165,13 +167,18 @@ function main() {
       main "help"
       return
     fi
-    #去掉$2中的路径，只保留文件名
-    LEFT_VIDEO=${2##*/}
+    LEFT_VIDEO_PATH=$2
+    RIGHT_VIDEO_PATH=$3
+    #去掉$2中的路径和扩展名，只保留文件名
+    LEFT_VIDEO_FILE=${LEFT_VIDEO_PATH##*/}
+    LEFT_VIDEO_NAME=${LEFT_VIDEO_FILE%.*}
+
     #去掉$3中的路径，只保留文件名
-    RIGHT_VIDEO=${3##*/}
-    MERGED1=$MERGE_DIR"$LEFT_VIDEO$RIGHT_VIDEO"
-    merge2Videos "$2" "$3" $MERGED1
-    MERGED2=$CURRENT_DIR"/result.mp4"
+    RIGHT_VIDEO=${RIGHT_VIDEO_PATH##*/}
+    MERGED1FILE=$LEFT_VIDEO_NAME"_"$RIGHT_VIDEO
+    MERGED1=$MERGE_DIR$MERGED1FILE
+    merge2Videos $LEFT_VIDEO_PATH $RIGHT_VIDEO_PATH $MERGED1
+    MERGED2=$RESULT_DIR$MERGED1FILE
     mergeFinalVideo $APP_IMAGE $MERGED1 $MERGED2
   else
     echo "unknown subcmd: $1"
