@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+  ./run.sh "help"
+else
+  #如果有参数，则执行main函数
+  ./run.sh "main" "$@"
+fi

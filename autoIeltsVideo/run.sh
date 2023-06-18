@@ -5,17 +5,18 @@ function main() {
 
   if [ $1 = "help" ]; then
     echo "Usage: $0 SUBCMD [args]"
+    echo "   OR: ./subcmd [args]"
     #说明后面的参数
     echo "SUBCMD:"
     echo "  help:                     print help info"
     echo "  main:                     leftVideo rightVideo audio splitTime"
     echo "  fakeVideo/fake:           srcVideo audio"
-    echo "  merge2Videos/merge2:      leftVideo rightVideo"
-    echo "  mergeFinalVideo/final:    video"
-    echo "  mergeAllVideos/merge:     leftVideo rightVideo"
-    echo "  info:                     mediaFile"
-    echo "  splitAudio/split:         audioFile time"
-    echo "  mergeIvv/ivv:             leftVideo rightVideo"
+#    echo "  merge2Videos/merge2:      leftVideo rightVideo"
+#    echo "  mergeFinalVideo/final:    video"
+#    echo "  mergeAllVideos/merge:     leftVideo rightVideo"
+#    echo "  info:                     mediaFile"
+#    echo "  splitAudio/split:         audioFile time"
+    echo "  mergeInApp/inapp:         leftVideo rightVideo"
     return
   elif [ $1 = "info" ]; then
     mediaInfo $2
@@ -109,7 +110,7 @@ function main() {
 
     #一把合并好
     FINAL_SPEC_NAME=$RESULT_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
-    mergeIvv $APP_IMAGE $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $FINAL_SPEC_NAME
+    mergeInApp $APP_IMAGE $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $FINAL_SPEC_NAME
     if [ ! -f $FINAL_SPEC_NAME ]; then
       echo "failed to create $RESULT_VIDEO"
       return
@@ -194,10 +195,10 @@ function main() {
     merge2Videos $LEFT_VIDEO_PATH $RIGHT_VIDEO_PATH $MERGED1
     MERGED2=$RESULT_DIR$MERGED1FILE
     mergeFinalVideo $APP_IMAGE $MERGED1 $MERGED2
-  elif [ $1 = "mergeIvv" ] || [ $1 = "ivv" ]; then
-    # mergeIvv: leftVideo rightVideo
+  elif [ $1 = "mergeInApp" ] || [ $1 = "inapp" ]; then
+    # mergeInApp: leftVideo rightVideo
     if [ $# -ne 3 ]; then
-      echo "mergeIvv: leftVideo rightVideo"
+      echo "mergeInApp: leftVideo rightVideo"
       main "help"
       return
     fi
@@ -211,7 +212,7 @@ function main() {
     RIGHT_VIDEO=${RIGHT_VIDEO_PATH##*/}
 
     MERGED=$RESULT_DIR$LEFT_VIDEO_NAME"_"$RIGHT_VIDEO
-    mergeIvv $APP_IMAGE $LEFT_VIDEO_PATH $RIGHT_VIDEO_PATH $MERGED
+    mergeInApp $APP_IMAGE $LEFT_VIDEO_PATH $RIGHT_VIDEO_PATH $MERGED
   else
     echo "unknown subcmd: $1"
     main "help"
@@ -312,8 +313,8 @@ mergeFinalVideo() {
 }
 
 
-mergeIvv() {
-  # mergeIvv $iAPP_IMAGE $iLEFT_VIDEO $iRIGHT_VIDEO to $iRESULT_VIDEO
+mergeInApp() {
+  # mergeInApp $iAPP_IMAGE $iLEFT_VIDEO $iRIGHT_VIDEO to $iRESULT_VIDEO
   iAPP_IMAGE=$1
   #故意左右反一下，因为考官要放右边了
   iRIGHT_VIDEO=$2
@@ -322,7 +323,7 @@ mergeIvv() {
   if [ -f $iRESULT_VIDEO ]; then
     rm -f $iRESULT_VIDEO
   fi
-  echo "mergeIvv $iAPP_IMAGE $iLEFT_VIDEO $iRIGHT_VIDEO to $iRESULT_VIDEO"
+  echo "mergeInApp $iAPP_IMAGE $iLEFT_VIDEO $iRIGHT_VIDEO to $iRESULT_VIDEO"
   #将视频iLEFT_VIDEO iRIGHT_VIDEO 放入图片iAPP_IMAGE中， iLEFT_VIDEO放在左边，iRIGHT_VIDEO放在右边，左、右视频宽度均为270，视频高度为335，左视频位置为15:180，右视频位置为285:180
   CMD="ffmpeg -i $iAPP_IMAGE -i $iLEFT_VIDEO -i $iRIGHT_VIDEO -filter_complex \"[1:v]scale=270:335[1v];[2:v]scale=270:335[2v];[0:v][1v]overlay=15:180[outv];[outv][2v]overlay=290:180[outv];[1:a][2:a]amix=inputs=2[outa]\" -map \"[outv]\" -map \"[outa]\" -c:a aac -c:v libx264 -crf 23 -preset veryfast $iRESULT_VIDEO"
   echo "-------------------"
@@ -331,10 +332,10 @@ mergeIvv() {
   eval $CMD
 
   if [ $? -ne 0 ]; then
-    echo "mergeIvv failed"
+    echo "mergeInApp failed"
     return
   fi
-  echo "merged ivv video: $iRESULT_VIDEO created"
+  echo "merged inapp video: $iRESULT_VIDEO created"
 }
 
 mediaInfo() {
