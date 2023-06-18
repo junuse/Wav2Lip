@@ -316,8 +316,8 @@ mergeIvv() {
   # mergeIvv $iAPP_IMAGE $iLEFT_VIDEO $iRIGHT_VIDEO to $iRESULT_VIDEO
   iAPP_IMAGE=$1
   #故意左右反一下，因为考官要放右边了
-  iRIGHT_VIDEO=$3
-  iLEFT_VIDEO=$2
+  iRIGHT_VIDEO=$2
+  iLEFT_VIDEO=$3
   iRESULT_VIDEO=$4
   if [ -f $iRESULT_VIDEO ]; then
     rm -f $iRESULT_VIDEO
