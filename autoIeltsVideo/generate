@@ -4,5 +4,12 @@ if [ $# -eq 0 ]; then
   ./run.sh "help"
 else
   #如果有参数，则执行main函数
+  echo "[$(date)] $@" >> ./log/$(date +%Y%m%d).log
   ./run.sh "main" "$@"
+  if [ $? -ne 0 ]; then
+    failInfo="./generate $@ failed"
+    echo "!!! "$failInfo" !!!"
+    echo "[$(date)] $failInfo" >> ./log/$(date +%Y%m%d).log
+    exit 1
+  fi
 fi

@@ -1,0 +1,45 @@
+#!/bin/bash
+
+source ./utils.sh
+
+
+cd "$(dirname "$0")"
+
+examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam")
+canVideos=$(getFileListInDirWhichHasPrefix "materials" "can")
+qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna")
+echo "examVideos: $examVideos"
+echo "canVideos: $canVideos"
+echo "qnaAudios: $qnaAudios"
+
+genratedCounter=0
+skippedCounter=0
+materialPath="materials/"
+#遍历examVideos，canVideos，qnaAudios，调用generate脚本
+for examVideo in $examVideos
+do
+  for canVideo in $canVideos
+  do
+    for qnaAudio in $qnaAudios
+    do
+      echo "check result of materials: $examVideo $canVideo $qnaAudio"
+      if [ $(isResultFileExistByMaterials materialPath$examVideo $canVideo $qnaAudio) = "true" ]; then
+        echo "result file exist, skip"
+        skippedCounter=$(($skippedCounter+1))
+        continue
+      fi
+      if [ $(isReasonableMaterialsCombination $examVideo $canVideo $qnaAudio) = "false" ]; then
+        echo "materials combination is not reasonable, skip"
+        continue
+      fi
+      ./generate $materialPath$examVideo $materialPath$canVideo $materialPath$qnaAudio
+      if [ $? -ne 0 ]; then
+        echo "generate failed, exit"
+        exit 1
+      fi
+      genratedCounter=$(($genratedCounter+1))
+      echo "$genratedCounter new files has been generated, $skippedCounter files has been skipped"
+    done
+  done
+done
+echo "[Report]: $genratedCounter new files generated"
