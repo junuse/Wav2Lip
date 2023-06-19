@@ -1,4 +1,5 @@
 #!/bin/bash
+source ./utils.sh
 
 function main() {
   #打印帮助提示信息，第一个参数是左视频，第二个参数是右视频，第三个是audio
@@ -9,7 +10,7 @@ function main() {
     #说明后面的参数
     echo "SUBCMD:"
     echo "  help:                     print help info"
-    echo "  main:                     leftVideo rightVideo audio splitTime"
+    echo "  main:                     leftVideo rightVideo audio"
     echo "  fakeVideo/fake:           srcVideo audio"
 #    echo "  merge2Videos/merge2:      leftVideo rightVideo"
 #    echo "  mergeFinalVideo/final:    video"
@@ -39,8 +40,8 @@ function main() {
 
   if [ $1 = "main" ]; then
     # main: leftVideo rightVideo audio"
-    if [ $# -ne 5 ]; then
-      echo "main: leftVideo rightVideo audio splitTime"
+    if [ $# -ne 4 ]; then
+      echo "main: leftVideo rightVideo audio"
       main "help"
       exit 1
     fi
@@ -49,24 +50,28 @@ function main() {
     # 2.合并左右视频
     # 3.将合并后的视频嵌入到图片中
 
-    # main: leftVideo rightVideo audio splitTime"
+    # main: leftVideo rightVideo audio"
     # PATH, directory, file
     # FILE, filename.extension
     # NAME, filename,no extension
     LEFT_VIDEO_SRC_PATH=$2
     RIGHT_VIDEO_SRC_PATH=$3
     AUDIO_SRC_PATH="$4"
-    SPLIT_TIME=$5
 
     AUDIO_SRC_FILE=${AUDIO_SRC_PATH##*/}
     AUDIO_SRC_FILENAME=${AUDIO_SRC_FILE%.*}
     AUDIO_SRC_FILE_EXT=${AUDIO_SRC_FILE##*.}
 
+    SPLIT_TIME=$(getSplitTime $AUDIO_SRC_FILE)
+    if [ $SPLIT_TIME -eq 0 ]; then
+      echo "failed to get split time:$AUDIO_SRC_FILE"
+      exit 1
+    fi
     #TODO, 将AUDIO按照时间点分为left right 口型audio
     #将audio文件名的扩展名之前加上数字1，作为左视频的audio文件名
-    LEFT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}sL."$AUDIO_SRC_FILE_EXT
+    LEFT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"s_1."$AUDIO_SRC_FILE_EXT
     #将audio文件名的扩展名之前加上数字2，作为右视频的audio文件名
-    RIGHT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"_${SPLIT_TIME}sR."$AUDIO_SRC_FILE_EXT
+    RIGHT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"s_2."$AUDIO_SRC_FILE_EXT
 
     splitAudio $AUDIO_SRC_PATH $SPLIT_TIME $LEFT_AUDIO_PATH $RIGHT_AUDIO_PATH
 
@@ -77,9 +82,8 @@ function main() {
     LEFT_VIDEO_SRC_FILE_EXT=${LEFT_VIDEO_SRC_FILE##*.}
     RIGHT_VIDEO_SRC_FILENAME=${RIGHT_VIDEO_SRC_FILE%.*}
     RIGHT_VIDEO_SRC_FILE_EXT=${RIGHT_VIDEO_SRC_FILE##*.}
-    FAKED_LEFT_VIDEO=$FAKED_DIR$LEFT_VIDEO_SRC_FILENAME"-"$AUDIO_SRC_FILENAME"_${SPLIT_TIME}sL."$LEFT_VIDEO_SRC_FILE_EXT
-    FAKED_RIGHT_VIDEO=$FAKED_DIR$RIGHT_VIDEO_SRC_FILENAME"-"$AUDIO_SRC_FILENAME"_${SPLIT_TIME}sR."$RIGHT_VIDEO_SRC_FILE_EXT
-    LRMERGE_VIDEO=$MERGE_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
+    FAKED_LEFT_VIDEO=$FAKED_DIR$LEFT_VIDEO_SRC_FILENAME"-"$AUDIO_SRC_FILENAME"s_1."$LEFT_VIDEO_SRC_FILE_EXT
+    FAKED_RIGHT_VIDEO=$FAKED_DIR$RIGHT_VIDEO_SRC_FILENAME"-"$AUDIO_SRC_FILENAME"s_2."$RIGHT_VIDEO_SRC_FILE_EXT
 
     fakeVideo $LEFT_VIDEO_SRC_PATH $LEFT_AUDIO_PATH $FAKED_LEFT_VIDEO
     #判断返回结果
@@ -109,7 +113,7 @@ function main() {
 #    fi
 
     #一把合并好
-    FINAL_SPEC_NAME=$RESULT_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s.mp4"
+    FINAL_SPEC_NAME=$RESULT_DIR$LEFT_VIDEO_SRC_FILENAME"_"$RIGHT_VIDEO_SRC_FILENAME"_"$AUDIO_SRC_FILENAME"_"$SPLIT_TIME"s."$LEFT_VIDEO_SRC_FILE_EXT
     mergeInApp $APP_IMAGE $FAKED_LEFT_VIDEO $FAKED_RIGHT_VIDEO $FINAL_SPEC_NAME
     if [ ! -f $FINAL_SPEC_NAME ]; then
       echo "failed to create $RESULT_VIDEO"
@@ -119,18 +123,18 @@ function main() {
   elif [ $1 = "splitAudio" ] || [ $1 = "split" ]; then
     # splitAudio: audioFile time
     if [ $# -ne 3 ]; then
-      echo "splitAudio: audioFile time"
+      echo "splitAudio: audioFile"
       main "help"
       exit 1
     fi
 
     AUDIO_NAME=${2%.*}
     AUDIO=$2
-    SPLIT_TIME=$3
+    SPLIT_TIME=$(getSplitTime $AUDIO)
     #将audio文件名的扩展名之前加上数字1，作为左视频的audio文件名
-    LEFT_AUDIO=$AUDIO_NAME"_${SPLIT_TIME}s_1."${2##*.}
+    LEFT_AUDIO=$AUDIO_NAME"s_1."${2##*.}
     #将audio文件名的扩展名之前加上数字2，作为右视频的audio文件名
-    RIGHT_AUDIO=$AUDIO_NAME"_${SPLIT_TIME}s_2."${2##*.}
+    RIGHT_AUDIO=$AUDIO_NAME"s_2."${2##*.}
 
     splitAudio $2 $SPLIT_TIME $LEFT_AUDIO $RIGHT_AUDIO
   elif [ $1 = "fakeVideo" ] || [ $1 = "fake" ]; then
@@ -345,6 +349,7 @@ mediaInfo() {
 }
 
 splitAudio() {
+  # splitAudio $iAudio $iSplitPoint $iSubAudio1 $iSubAudio2
   iAudio=$1
   iSplitPoint=$2
   iSubAudio1=$3
@@ -381,7 +386,11 @@ splitAudio() {
   fi
   echo "splitAudio $iAudio $iSplitPoint $iSubAudio1 $iSubAudio2"" created"
 }
-
+function getSplitTime() {
+  filename=$1
+  #filename类似 audio-001-11s.mp3形式，把11s提取出来
+  echo ${filename##*-} | cut -d '.' -f 1
+}
 #如果没有参数，则打印帮助信息
 if [ $# -eq 0 ]; then
   main "help"
