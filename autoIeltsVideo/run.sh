@@ -239,8 +239,13 @@ fakeVideo() {
     exit 1
   fi
   if [ -f $iFAKED_VIDEO ]; then
+    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
+    if [ $IELTS_IN_REGRESSION = "true" ]; then
+      echo "In regression, file $iFAKED_VIDEO exists, skip"
+      return
+    fi
     #询问是否删除该文件，等待3秒，若未输入，缺省为不删除
-    read -t 6 -p "file $iFAKED_VIDEO exists, delete it? [y/N]" DEL
+    read -t 3 -p "file $iFAKED_VIDEO exists, delete it? [y/N]" DEL
     #如果DEL为空或者不是y，则缺省为不删除
     if [ -z $DEL ] || [ $DEL != "y" ]; then
       echo "file $iFAKED_VIDEO exists, skip"
@@ -272,7 +277,12 @@ merge2Videos() {
   iRIGHT_VIDEO=$2
   iRESULT_VIDEO=$3
   if [ -f $iRESULT_VIDEO ]; then
-    read -t 6 -p "file $iRESULT_VIDEO exists, delete it? [y/N]" DEL
+    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
+    if [ $IELTS_IN_REGRESSION = "true" ]; then
+      echo "In regression, file $iRESULT_VIDEO exists, skip"
+      return
+    fi
+    read -t 3 -p "file $iRESULT_VIDEO exists, delete it? [y/N]" DEL
     if [ -z $DEL ] || [ $DEL != "y" ]; then
       echo "file $iRESULT_VIDEO exists, skip"
       return
@@ -356,8 +366,13 @@ splitAudio() {
   iSubAudio2=$4
   #删除文件iSubAudio1和iSubAudio2，如果存在
   if [ -f $iSubAudio1 ]; then
+    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
+    if [ $IELTS_IN_REGRESSION = "true" ]; then
+      echo "In regression, file $iSubAudio1 exists, skip"
+      return
+    fi
     #询问是否删除，等待3s，默认不删除
-    read -t 6 -p "file $iSubAudio1 exists, delete it? [y/N]" DEL
+    read -t 3 -p "file $iSubAudio1 exists, delete it? [y/N]" DEL
     #如果DEL为空或者不是y，则缺省为不删除
     if [ -z $DEL ] || [ $DEL != "y" ]; then
       echo "file $iSubAudio1 exists, skip"

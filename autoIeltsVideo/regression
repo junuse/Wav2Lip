@@ -5,6 +5,10 @@ source ./utils.sh
 
 cd "$(dirname "$0")"
 
+logFile=./log/$(date +%Y%m%d).log
+echo "$(date) start regression..." >> $logFile
+export IELTS_IN_REGRESSION="true"
+
 examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam")
 canVideos=$(getFileListInDirWhichHasPrefix "materials" "can")
 qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna")
@@ -22,24 +26,24 @@ do
   do
     for qnaAudio in $qnaAudios
     do
-      echo "check result of materials: $examVideo $canVideo $qnaAudio"
-      if [ $(isResultFileExistByMaterials materialPath$examVideo $canVideo $qnaAudio) = "true" ]; then
-        echo "result file exist, skip"
+      echo "check result of materials: $examVideo $canVideo $qnaAudio" >> $logFile
+      if [ $(isResultFileExistByMaterials $examVideo $canVideo $qnaAudio) = "true" ]; then
+        echo "result file exist, skip" >> $logFile
         skippedCounter=$(($skippedCounter+1))
         continue
       fi
       if [ $(isReasonableMaterialsCombination $examVideo $canVideo $qnaAudio) = "false" ]; then
-        echo "materials combination is not reasonable, skip"
+        echo "materials combination is not reasonable, skip" >> $logFile
         continue
       fi
-      ./generate $materialPath$examVideo $materialPath$canVideo $materialPath$qnaAudio
+      ./run $materialPath$examVideo $materialPath$canVideo $materialPath$qnaAudio
       if [ $? -ne 0 ]; then
-        echo "generate failed, exit"
+        echo "generate failed, exit" >> $logFile
         exit 1
       fi
       genratedCounter=$(($genratedCounter+1))
-      echo "$genratedCounter new files has been generated, $skippedCounter files has been skipped"
+      echo "$genratedCounter new files has been generated, $skippedCounter files has been skipped" >> $logFile
     done
   done
 done
-echo "[Report]: $genratedCounter new files generated"
+echo "[Report]: $genratedCounter new files generated" >> $logFile
