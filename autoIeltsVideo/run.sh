@@ -239,8 +239,7 @@ fakeVideo() {
     exit 1
   fi
   if [ -f $iFAKED_VIDEO ]; then
-    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
-    if [ $IELTS_IN_REGRESSION = "true" ]; then
+    if [ $(isInRegression) ]; then
       echo "In regression, file $iFAKED_VIDEO exists, skip"
       return
     fi
@@ -277,8 +276,7 @@ merge2Videos() {
   iRIGHT_VIDEO=$2
   iRESULT_VIDEO=$3
   if [ -f $iRESULT_VIDEO ]; then
-    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
-    if [ $IELTS_IN_REGRESSION = "true" ]; then
+    if [ $(isInRegression) ]; then
       echo "In regression, file $iRESULT_VIDEO exists, skip"
       return
     fi
@@ -366,8 +364,7 @@ splitAudio() {
   iSubAudio2=$4
   #删除文件iSubAudio1和iSubAudio2，如果存在
   if [ -f $iSubAudio1 ]; then
-    #判断环境变量IELTS_IN_REGRESSION是否为1，如果是，则不询问，直接返回
-    if [ $IELTS_IN_REGRESSION = "true" ]; then
+    if [ $(isInRegression) ]; then
       echo "In regression, file $iSubAudio1 exists, skip"
       return
     fi

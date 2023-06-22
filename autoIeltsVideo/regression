@@ -7,14 +7,15 @@ cd "$(dirname "$0")"
 
 logFile=./log/$(date +%Y%m%d).log
 echo "$(date) start regression..." >> $logFile
-export IELTS_IN_REGRESSION="true"
+setInRegression
 
+echo $isInRegression
 examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam")
 canVideos=$(getFileListInDirWhichHasPrefix "materials" "can")
 qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna")
-echo "examVideos: $examVideos"
-echo "canVideos: $canVideos"
-echo "qnaAudios: $qnaAudios"
+echo "examVideos: $examVideos" >> $logFile
+echo "canVideos: $canVideos" >> $logFile
+echo "qnaAudios: $qnaAudios" >> $logFile
 
 genratedCounter=0
 skippedCounter=0
@@ -26,6 +27,11 @@ do
   do
     for qnaAudio in $qnaAudios
     do
+      echo "checking $examVideo $canVideo $qnaAudio..." >> $logFile
+      if [ $(isMaterialSeqLaterThan $qnaAudio "qna-008") == "false" ]; then
+        echo "$qnaAudio is not later than qna-008, skip" >> $logFile
+        continue
+      fi
       echo "check result of materials: $examVideo $canVideo $qnaAudio" >> $logFile
       if [ $(isResultFileExistByMaterials $examVideo $canVideo $qnaAudio) = "true" ]; then
         echo "result file exist, skip" >> $logFile
@@ -47,3 +53,4 @@ do
   done
 done
 echo "[Report]: $genratedCounter new files generated" >> $logFile
+unsetInRegression

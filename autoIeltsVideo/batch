@@ -18,58 +18,28 @@ function fake() {
   done
 }
 
-function cropFinalVideo() {
-  # $1: 带app屏视频文件
-  # $2: 抠对话窗
-  vWithApp=$1
-  vDialog=$2
-  #判断vDialog是否存在
-  if [ -f $vDialog ]; then
-    echo "$vDialog already exists"
-    return 0
-  fi
-  #获取vWithApp分辨率
-  vWithAppWidth=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=s=x:p=0 $vWithApp)
-  vWithAppHeight=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=s=x:p=0 $vWithApp)
-  echo "vWithAppWidth: $vWithAppWidth, vWithAppHeight: $vWithAppHeight"
-  #根据高度提供对话框尺寸与位置
-  if [ $vWithAppHeight -eq 1280 ]; then
-    dialogWidth=545
-    dialogHeight=334
-    startX=15
-    startY=180
-  else
-    echo "Unknown app video height"
-    return 1
-  fi
-  echo "dialogWidth: $dialogWidth, dialogHeight: $dialogHeight, startX: $startX, startY: $startY"
-  #根据对话框坐标，计算出对话框的区域
-  dialogArea="${dialogWidth}:${dialogHeight}:${startX}:${startY}"
-  echo "dialogArea: $dialogArea"
-  #根据对话框区域，抠出对话框
-  CMD="ffmpeg -i $vWithApp -filter:v \"crop=$dialogArea\" $vDialog"
-  echo $CMD
-  eval $CMD
-  if [ $? -ne 0 ]; then
-    echo "Failed to crop dialog from $vWithApp"
-    rm -f $vDialog
-    return 1
-  fi
-}
-
 function cropFinalVideos() {
   appVideoDir="result/"
   dialogVideoDir="result/dialog/"
+  checkedCount=0
+  croppedCount=0
   for f in $appVideoDir*.mp4; do
     #将f中的appVideoDir替换为dialogVideoDir
     dialogVideoName=${f/$appVideoDir/$dialogVideoDir}
     cropFinalVideo $f $dialogVideoName
-    if [ $? -ne 0 ]; then
+    #将返回值转为整数
+    result=$(($?))
+
+    checkedCount=$((checkedCount+1))
+    if [ $result -eq 0 ]; then
+      croppedCount=$((croppedCount+1))
+    elif [ $result -eq -1 ]; then
       echo "Failed to crop $f to $dialogVideoName"
+      echo "checkedCount: $checkedCount, croppedCount: $croppedCount"
       exit 1
     fi
-
   done
+  echo "checkedCount: $checkedCount, croppedCount: $croppedCount"
 }
 
 #根据第一个参数选择功能：fake, cropFinalVideo

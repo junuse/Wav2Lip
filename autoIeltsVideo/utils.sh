@@ -1,6 +1,47 @@
 #!/bin/bash
 
 
+function cropFinalVideo() {
+  # $1: 带app屏视频文件
+  # $2: 抠对话窗
+  vWithApp=$1
+  vDialog=$2
+  #判断vDialog是否存在
+  if [ -f $vDialog ]; then
+    echo "$vDialog already exists"
+    return 1
+  fi
+  #获取vWithApp分辨率
+  vWithAppWidth=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=s=x:p=0 $vWithApp)
+  vWithAppHeight=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=s=x:p=0 $vWithApp)
+  echo "vWithAppWidth: $vWithAppWidth, vWithAppHeight: $vWithAppHeight"
+  #根据高度提供对话框尺寸与位置
+  if [ $vWithAppHeight -eq 1280 ]; then
+    dialogWidth=545
+    dialogHeight=334
+    startX=15
+    startY=180
+  else
+    echo "Unknown app video height"
+    return 2
+  fi
+  echo "dialogWidth: $dialogWidth, dialogHeight: $dialogHeight, startX: $startX, startY: $startY"
+  #根据对话框坐标，计算出对话框的区域
+  dialogArea="${dialogWidth}:${dialogHeight}:${startX}:${startY}"
+  echo "dialogArea: $dialogArea"
+  #根据对话框区域，抠出对话框
+  CMD="ffmpeg -i $vWithApp -filter:v \"crop=$dialogArea\" $vDialog"
+  echo $CMD
+  eval $CMD
+  if [ $? -ne 0 ]; then
+    echo "Failed to crop dialog from $vWithApp"
+    rm -f $vDialog
+    return 2
+  else
+    return 0
+  fi
+}
+
 function getSplitTime() {
   filename=$1
   #filename类似 audio-001-11.mp3形式，把11s提取出来
@@ -66,6 +107,47 @@ function getFileNameNoPathNoExt() {
   echo $fileNameNoPathNoExt
 }
 
+function cropFinalVideo() {
+  # $1: 带app屏视频文件
+  # $2: 抠对话窗
+  vWithApp=$1
+  vDialog=$2
+  #判断vDialog是否存在
+  if [ -f $vDialog ]; then
+    echo "$vDialog already exists"
+    return 1
+  fi
+  #获取vWithApp分辨率
+  vWithAppWidth=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=s=x:p=0 $vWithApp)
+  vWithAppHeight=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=s=x:p=0 $vWithApp)
+  echo "vWithAppWidth: $vWithAppWidth, vWithAppHeight: $vWithAppHeight"
+  #根据高度提供对话框尺寸与位置
+  if [ $vWithAppHeight -eq 1280 ]; then
+    dialogWidth=545
+    dialogHeight=334
+    startX=15
+    startY=180
+  else
+    echo "Unknown app video height"
+    return 2
+  fi
+  echo "dialogWidth: $dialogWidth, dialogHeight: $dialogHeight, startX: $startX, startY: $startY"
+  #根据对话框坐标，计算出对话框的区域
+  dialogArea="${dialogWidth}:${dialogHeight}:${startX}:${startY}"
+  echo "dialogArea: $dialogArea"
+  #根据对话框区域，抠出对话框
+  CMD="ffmpeg -i $vWithApp -filter:v \"crop=$dialogArea\" $vDialog"
+  echo $CMD
+  eval $CMD
+  if [ $? -ne 0 ]; then
+    echo "Failed to crop dialog from $vWithApp"
+    rm -f $vDialog
+    return 2
+  else
+    return 0
+  fi
+}
+
 isResultFileExistByMaterials() {
 #  scriptDir=$(dirname $0)
 #  cwd=$(pwd)
@@ -89,4 +171,40 @@ isReasonableMaterialsCombination() {
   else
     echo false
   fi
+}
+
+isMaterialSeqLaterThan() {
+  #判断文件前7个字符是否大于$2
+  leftFileNameNoPathNoExt=$(getFileNameNoPathNoExt $1)
+  rightFileNameNoPathNoExt=$(getFileNameNoPathNoExt $2)
+  if [[ ${leftFileNameNoPathNoExt:0:7} > $rightFileNameNoPathNoExt ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+setInRegression() {
+  export IELTS_IN_REGRESSION=true
+}
+unsetInRegression() {
+  #删除环境变量IELTS_IN_REGRESSION
+  unset IELTS_IN_REGRESSION
+}
+isInRegression() {
+  if [ -v IELTS_IN_REGRESSION ] && [ $IELTS_IN_REGRESSION == "true" ]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
+ffmpegDelogo() {
+  inputFile=$1
+  outputFile=$2
+  X=$3
+  Y=$4
+  W=$5
+  H=$6
+  #ffmpeg将一个视频中间的区域水印去除
+  ffmpeg -i $inputFile -vf delogo=x=$X:y=$Y:w=$W:h=$H $outputFile
 }
