@@ -137,6 +137,7 @@ function cropFinalVideo() {
   echo "dialogArea: $dialogArea"
   #根据对话框区域，抠出对话框
   CMD="ffmpeg -i $vWithApp -filter:v \"crop=$dialogArea\" $vDialog"
+  #ffmpeg -i src.mp4 -filter:v "crop=270:368:185:0" dst.mp4
   echo $CMD
   eval $CMD
   if [ $? -ne 0 ]; then
@@ -291,4 +292,16 @@ makeAudioFilter() {
   done
   filterStr=$filterStr"':volume=0'"
   echo $filterStr
+}
+
+cropVideoWindow() {
+  width=$1
+  hight=$2
+  startX=$3
+  startY=$4
+  inputFile=$5
+  outputFile=$6
+  CMD="ffmpeg -i $inputFile -filter:v \"crop=$width:$hight:$startX:$startY\" $outputFile"
+  echo $CMD
+  eval $CMD
 }
