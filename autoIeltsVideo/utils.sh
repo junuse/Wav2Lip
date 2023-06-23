@@ -208,3 +208,87 @@ ffmpegDelogo() {
   #ffmpeg将一个视频中间的区域水印去除
   ffmpeg -i $inputFile -vf delogo=x=$X:y=$Y:w=$W:h=$H $outputFile
 }
+
+makeRoleAudio() {
+  audioPath=$1
+  examAudioPath=$2
+  candidateAudioPath=$3
+
+  if [ -f $examAudioPath ]; then
+    if [ $(isInRegression) == "true" ]; then
+      echo "In regression, file $examAudioPath exists, skip"
+      return
+    fi
+    #询问是否删除，等待3s，默认不删除
+    read -t 3 -p "file $examAudioPath exists, delete it? [y/N]" DEL
+    #如果DEL为空或者不是y，则缺省为不删除
+    if [ -z $DEL ] || [ $DEL != "y" ]; then
+      echo "file $examAudioPath exists, skip"
+      return
+    else
+      rm -f $examAudioPath $candidateAudioPath
+    fi
+  fi
+
+  audioNameNoExt=$(getFileNameNoPathNoExt $audioPath)
+  audioExt=$(getFileExt $audioPath)
+
+  #从名字part1audio001-1-s0t15-turn-3-7-9中分离出swap后面的数字列表，这个数字列表是变长的，将这些数字分离出来，用于后面的循环
+  swapTimeSecs=`echo $audioNameNoExt | sed 's/.*swap-\([0-9]\+\(-[0-9]\+\)*\).*/\1/'`
+  #考官音频filter
+  examinerFilter=$(makeAudioFilter $swapTimeSecs"-100000")
+  CMD="ffmpeg -i $audioPath -af \"$examinerFilter\" -y $examAudioPath"
+  echo $CMD
+  eval $CMD
+  if [ ! -f $examAudioPath ]; then
+    echo "failed to create $examAudioPath"
+    exit 1
+  fi
+  #考生音频filter
+  candidateFilter=$(makeAudioFilter "0-"$swapTimeSecs)
+#  ffmpeg -i $audioPath -af "$candidateFilter" -y $candidateAudioPath
+  CMD="ffmpeg -i $audioPath -af \"$candidateFilter\" -y $candidateAudioPath"
+  echo $CMD
+  eval $CMD
+
+  if [ ! -f $candidateAudioPath ]; then
+    echo "failed to create $candidateAudioPath"
+    exit 1
+  fi
+  echo "makeRoleAudio $audioPath $examAudioPath $candidateAudioPath"" created"
+
+}
+
+makeAudioFilter() {
+  #3-5-9-10
+  swaps=$1
+
+  #将类似3-7-9的数字列表转换为数字列表
+  swapTimeSecs=`echo $swaps | sed 's/-/ /g'`
+
+  started=false
+  newStart=true
+  filterStr=""
+  buffer=""
+  for s in $swapTimeSecs
+  do
+    if [ $started == "false" ]; then
+      if [ $newStart == "true" ]; then
+        buffer="volume=enable='between(t,$s,"
+        newStart=false
+      else
+        buffer="+between(t,$s,"
+      fi
+      started=true
+      continue
+    else
+      buffer=$buffer"$s)"
+      started=false
+    fi
+    if [ $started == "false" ]; then
+      filterStr=$filterStr$buffer
+    fi
+  done
+  filterStr=$filterStr"':volume=0'"
+  echo $filterStr
+}

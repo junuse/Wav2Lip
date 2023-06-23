@@ -67,13 +67,18 @@ function main() {
       echo "failed to get split time:$AUDIO_SRC_FILE"
       exit 1
     fi
+#1.手工分割part1音频
+#2.兼容老的qna格式
+#3.考官的静音到底，修改
+#4.怎么衔接主流程，文件命名、路径
     #TODO, 将AUDIO按照时间点分为left right 口型audio
     #将audio文件名的扩展名之前加上数字1，作为左视频的audio文件名
     LEFT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"s-1."$AUDIO_SRC_FILE_EXT
     #将audio文件名的扩展名之前加上数字2，作为右视频的audio文件名
     RIGHT_AUDIO_PATH=$AUDIO_DIR$AUDIO_SRC_FILENAME"s-2."$AUDIO_SRC_FILE_EXT
 
-    splitAudio $AUDIO_SRC_PATH $SPLIT_TIME $LEFT_AUDIO_PATH $RIGHT_AUDIO_PATH
+#    splitAudio $AUDIO_SRC_PATH $SPLIT_TIME $LEFT_AUDIO_PATH $RIGHT_AUDIO_PATH
+    makeRoleAudio $AUDIO_SRC_PATH $LEFT_AUDIO_PATH $RIGHT_AUDIO_PATH
 
     #对左右视频的口型
     LEFT_VIDEO_SRC_FILE=${LEFT_VIDEO_SRC_PATH##*/}
@@ -398,11 +403,14 @@ splitAudio() {
   fi
   echo "splitAudio $iAudio $iSplitPoint $iSubAudio1 $iSubAudio2"" created"
 }
+
+#ffmpeg -i test.mp3 -af "volume=enable='between(t,0,3)+between(t,5,7)+between(t,8,9)':volume=0" -y audio-role.mp3
 function getSplitTime() {
   filename=$1
   #filename类似 audio-001-11s.mp3形式，把11s提取出来
   echo ${filename##*-} | cut -d '.' -f 1
 }
+
 #如果没有参数，则打印帮助信息
 if [ $# -eq 0 ]; then
   main "help"

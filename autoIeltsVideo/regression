@@ -12,7 +12,7 @@ setInRegression
 echo $isInRegression
 examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam")
 canVideos=$(getFileListInDirWhichHasPrefix "materials" "can")
-qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna")
+qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna-part1audio001")
 echo "examVideos: $examVideos" >> $logFile
 echo "canVideos: $canVideos" >> $logFile
 echo "qnaAudios: $qnaAudios" >> $logFile

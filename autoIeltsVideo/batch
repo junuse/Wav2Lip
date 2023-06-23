@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./utils.sh
+
 # for each .mp3 file in audio/tts directory, start a new process with ./run.sh
 
 function fake() {
