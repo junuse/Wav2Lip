@@ -5,8 +5,9 @@ source ./utils.sh
 # for each .mp3 file in audio/tts directory, start a new process with ./run.sh
 
 function fake() {
-  for f in audio/tts/*.mp3; do
-      CMD="./run.sh fake video/smale.mp4 $f"
+  for f in materials/素材/模特2/*.mp4; do
+      echo $f
+      CMD="./run.sh fake $f materials/qna-part1audio001-mf-q01-swap-4.mp3"
       echo "$(date) $CMD" >> run.log
       eval $CMD
       # check the result and log result to file run.log
@@ -49,7 +50,8 @@ if [ $1 == "fake" ]; then
     # fake: 合成视频
     # $2: 视频文件
     # $3: 音频文件
-    ffmpeg -i $2 -i $3 -c:v copy -c:a aac -strict experimental -map 0:v:0 -map 1:a:0 -shortest output.mp4
+#    ffmpeg -i $2 -i $3 -c:v copy -c:a aac -strict experimental -map 0:v:0 -map 1:a:0 -shortest output.mp4
+    fake
 elif [ $1 == "crop" ]; then
     cropFinalVideos
 else

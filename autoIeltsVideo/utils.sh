@@ -199,17 +199,6 @@ isInRegression() {
   fi
 }
 
-ffmpegDelogo() {
-  inputFile=$1
-  outputFile=$2
-  X=$3
-  Y=$4
-  W=$5
-  H=$6
-  #ffmpeg将一个视频中间的区域水印去除
-  ffmpeg -i $inputFile -vf delogo=x=$X:y=$Y:w=$W:h=$H $outputFile
-}
-
 makeRoleAudio() {
   audioPath=$1
   examAudioPath=$2
@@ -304,4 +293,62 @@ cropVideoWindow() {
   CMD="ffmpeg -i $inputFile -filter:v \"crop=$width:$hight:$startX:$startY\" $outputFile"
   echo $CMD
   eval $CMD
+}
+
+ffmpegSnapshotVideo() {
+  inputFile=$1
+  outputFile=$(getFileNameNoPathNoExt $inputFile)".jpg"
+  CMD="ffmpeg -i $inputFile -y -f image2 -ss 00:00:01 -vframes 1 $outputFile"
+  echo $CMD
+  eval $CMD
+}
+
+ffmpegDelogo() {
+  W=$1
+  H=$2
+  X=$3
+  Y=$4
+  inputFile=$5
+  outputFile=$(getFileNameNoPathNoExt $inputFile)_delogo.mp4
+  #ffmpeg将一个视频中间的区域水印去除
+  cmd="ffmpeg -i $inputFile -vf delogo=x=$X:y=$Y:w=$W:h=$H $outputFile"
+  echo $cmd
+  eval $cmd
+}
+
+ffmpegCropVideoWindowAutoCropName() {
+  width=$1
+  hight=$2
+  startX=$3
+  startY=$4
+  inputFile=$5
+  outputFile=$(getFileNameNoPathNoExt $inputFile)"-"$width"-"$hight"-"$startX"-"$startY".mp4"
+  cropVideoWindow $width $hight $startX $startY $inputFile $outputFile
+}
+
+getCombinations() {
+  combinationCount=$1
+  #后续所有参数的列表
+  inputList=${@:2}
+  #后续所有参数的个数减一
+  inputListCount=$(($# - 1))
+  echo "inputList($inputListCount) is: $inputList"
+  #向inputList增加"a"
+  inputList=$inputList" a"
+  #inputList增加"a"后的个数
+  inputListCount=$(($inputListCount + 1))
+  echo "inputList$inputListCount is: $inputList"
+  #产生所有的组合
+#  combinations=$(getCombinations $combinationCount $inputList)
+#  echo "combinations is: $combinations"
+}
+
+getPythonResult() {
+
+  # 调用Python脚本并获取结果
+  result=$(python py-utils/getCombinationsOfList.py 3 1 1 2 3 4)
+
+  # 打印结果
+  echo "结果是：$result"
+
 }

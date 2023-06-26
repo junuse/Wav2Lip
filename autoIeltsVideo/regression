@@ -10,9 +10,9 @@ echo "$(date) start regression..." >> $logFile
 setInRegression
 
 echo $isInRegression
-examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam")
-canVideos=$(getFileListInDirWhichHasPrefix "materials" "can")
-qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna-part1audio001")
+examVideos=$(getFileListInDirWhichHasPrefix "materials" "can-005")
+canVideos=$(getFileListInDirWhichHasPrefix "materials" "can-")
+qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna-sound3")
 echo "examVideos: $examVideos" >> $logFile
 echo "canVideos: $canVideos" >> $logFile
 echo "qnaAudios: $qnaAudios" >> $logFile
@@ -25,13 +25,17 @@ for examVideo in $examVideos
 do
   for canVideo in $canVideos
   do
+#    if [ $(isMaterialSeqLaterThan $canVideo "can-105") == "false" ]; then
+#      echo "$canVideo is not later than can-105, skip" >> $logFile
+#      continue
+#    fi
     for qnaAudio in $qnaAudios
     do
       echo "checking $examVideo $canVideo $qnaAudio..." >> $logFile
-      if [ $(isMaterialSeqLaterThan $qnaAudio "qna-008") == "false" ]; then
-        echo "$qnaAudio is not later than qna-008, skip" >> $logFile
-        continue
-      fi
+#      if [ $(isMaterialSeqLaterThan $qnaAudio "qna-008") == "false" ]; then
+#        echo "$qnaAudio is not later than qna-008, skip" >> $logFile
+#        continue
+#      fi
       echo "check result of materials: $examVideo $canVideo $qnaAudio" >> $logFile
       if [ $(isResultFileExistByMaterials $examVideo $canVideo $qnaAudio) = "true" ]; then
         echo "result file exist, skip" >> $logFile
