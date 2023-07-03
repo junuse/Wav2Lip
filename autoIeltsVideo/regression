@@ -10,9 +10,9 @@ echo "$(date) start regression..." >> $logFile
 setInRegression
 
 echo $isInRegression
-examVideos=$(getFileListInDirWhichHasPrefix "materials" "can-005")
+examVideos=$(getFileListInDirWhichHasPrefix "materials" "exam-001")
 canVideos=$(getFileListInDirWhichHasPrefix "materials" "can-")
-qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna-sound3")
+qnaAudios=$(getFileListInDirWhichHasPrefix "materials" "qna-sound5")
 echo "examVideos: $examVideos" >> $logFile
 echo "canVideos: $canVideos" >> $logFile
 echo "qnaAudios: $qnaAudios" >> $logFile
@@ -29,6 +29,14 @@ do
 #      echo "$canVideo is not later than can-105, skip" >> $logFile
 #      continue
 #    fi
+    if [[ $canVideo =~ "can-004" || $canVideo =~ "can-006" || $canVideo =~ "can-007"
+     || $canVideo =~ "can-012" || $canVideo =~ "can-016" || $canVideo =~ "can-110"
+     || $canVideo =~ "can-104" || $canVideo =~ "can-111" ]]; then
+      echo "checking $examVideo $canVideo..." >> $logFile
+    else
+      echo "$canVideo...skip" >> $logFile
+      continue
+    fi
     for qnaAudio in $qnaAudios
     do
       echo "checking $examVideo $canVideo $qnaAudio..." >> $logFile
