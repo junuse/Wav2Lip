@@ -4,6 +4,54 @@ source ./utils.sh
 
 # for each .mp3 file in audio/tts directory, start a new process with ./run.sh
 
+function test() {
+  #遍历"materials\01：Work and Study"目录及所有子目录下的m4a,mp3文件:
+  for f in materials/0709/series1highScore25stories/*.mp3; do
+      CMD="./run.sh fake materials/exam-001-m.mp4 \"$f\""
+      echo "$(date) $CMD" >> run.log
+      eval $CMD
+      # check the result and log result to file run.log
+      if [ $? -eq 0 ]; then
+          echo "$(date) Success" >> run.log
+      else
+          echo "$(date) Failed" >> run.log
+          exit 1
+      fi
+  done
+
+  mv faked/*.mp4 faked/series1highScore25stories/
+
+  for f in materials/0709/Part1音频/*.mp3; do
+      CMD="./run.sh fake materials/exam-001-m.mp4 \"$f\""
+      echo "$(date) $CMD" >> run.log
+      eval $CMD
+      # check the result and log result to file run.log
+      if [ $? -eq 0 ]; then
+          echo "$(date) Success" >> run.log
+      else
+          echo "$(date) Failed" >> run.log
+          exit 1
+      fi
+  done
+
+}
+
+function tts() {
+  #遍历"materials\01：Work and Study"目录及所有子目录下的m4a,mp3文件:
+  for f in audio/tts/*.mp3; do
+      CMD="./run.sh fake materials/exam20s.mp4 \"$f\""
+      echo "$(date) $CMD" >> run.log
+      eval $CMD
+      # check the result and log result to file run.log
+      if [ $? -eq 0 ]; then
+          echo "$(date) Success" >> run.log
+      else
+          echo "$(date) Failed" >> run.log
+          exit 1
+      fi
+  done
+}
+
 function fake() {
   for f in materials/素材/模特2/*.mp4; do
       echo $f
@@ -54,6 +102,10 @@ if [ $1 == "fake" ]; then
     fake
 elif [ $1 == "crop" ]; then
     cropFinalVideos
+elif [ $1 == "test" ]; then
+    test
+elif [ $1 == "tts" ]; then
+    tts
 else
     echo "Unknown command"
     exit 1

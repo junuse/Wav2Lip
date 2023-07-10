@@ -57,11 +57,20 @@ function getSplitTime() {
 function replaceStrInFilename() {
   #将当前目录下文件名包含$1字符串的文件名替换为$2
   for filename in *$1*; do
-    newfilename=`echo $filename | sed "s/$1/$2/"`
-    mv $filename $newfilename
+    newfilename=`echo "$filename" | sed "s/$1/$2/"`
+    echo "mv $filename $newfilename"
+    mv "$filename" "$newfilename"
   done
 }
 
+function blankInFilename() {
+  #将当前目录下文件名包含$1字符串的文件名替换为$2
+  for filename in *$1*; do
+    newfilename=`echo "$filename" | sed "s/ //g"`
+    echo "mv $filename $newfilename"
+    mv "$filename" "$newfilename"
+  done
+}
 function getFileListInDirWhichHasPrefix() {
   path=$1
   #获取当前目录下所有文件名以$1开头的文件名
@@ -351,4 +360,16 @@ getPythonResult() {
   # 打印结果
   echo "结果是：$result"
 
+}
+
+medias2mp3() {
+  #将当前目录所有不是mp3的文件转为mp3
+  for file in `ls`
+  do
+    if [ -f $file ]; then
+      if [ $(getFileExt $file) != "mp3" ]; then
+        ffmpeg -i $file -f mp3 -vn $file".mp3"
+      fi
+    fi
+  done
 }

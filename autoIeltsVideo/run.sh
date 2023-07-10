@@ -233,7 +233,7 @@ fakeVideo() {
   iAUDIO=$2
   iFAKED_VIDEO=$3
 
-  echo "fakeVideo $iVIDEO $iAUDIO $iFAKED_VIDEO"
+  echo "fakeVideo '$iVIDEO' '$iAUDIO' '$iFAKED_VIDEO'"
   #判断是否存在该文件
   if [ ! -f $iVIDEO ]; then
     echo "file $iVIDEO not exists"
@@ -260,7 +260,7 @@ fakeVideo() {
   fi
   CURRENT_DIR=`pwd`
   cd ../
-  CMD="python inference.py --checkpoint_path wav2lip_gan.pth --face $CURRENT_DIR"/"$iVIDEO --audio $CURRENT_DIR"/"$iAUDIO --nosmooth"
+  CMD="python inference.py --checkpoint_path wav2lip_gan.pth --face $CURRENT_DIR"/"$iVIDEO --audio '$CURRENT_DIR"/"$iAUDIO' --nosmooth"
   echo "-------------------"
   echo $CMD
   echo "-------------------"
