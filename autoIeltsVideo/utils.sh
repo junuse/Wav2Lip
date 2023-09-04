@@ -373,3 +373,39 @@ medias2mp3() {
     fi
   done
 }
+
+
+function extendAudioTo22s() {
+  #获取input.mp3的长度
+  duration=$(ffprobe -i input.mp3 -show_entries format=duration -v quiet -of csv="p=0")
+  #获取duration对22取余
+  remainder=$(echo "$duration%22" | bc)
+  echo "duration: $duration, remainder: $remainder"
+  #22减去reminder即为需要静音的时间
+  pad=$(echo "22-$remainder" | bc)
+  echo "pad: $pad"
+
+  cmd="ffmpeg -i input.mp3 -af apad=pad_dur=$pad output.mp3"
+  echo $cmd
+  eval $cmd
+}
+
+
+function concatVideo() {
+  #concat 2 video to one
+  ffmpeg -i $1 -i $2 -filter_complex "[0:v] [0:a] [1:v] [1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" output.mp4
+}
+
+function concatMp3() {
+  ffmpeg -i $1 -i $2 -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1[outa]" -map "[outa]" concat.mp3
+}
+
+function coverVideo() {
+  srcVideo=$1
+  coverVideo=$2
+  outputVideo=$(getFileNameNoPathNoExt $srcVideo)"_"$(getFileNameNoPathNoExt $coverVideo)".mp4"
+  #ffmpeg -i src.mp4 -i cover.mp4 -filter_complex "[0:v] [0:a] [1:v] [1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" dst.mp4
+  cmd="ffmpeg -i $srcVideo -i $coverVideo -filter_complex \"[0:v]scale=544:334[0v];[1:v]scale=270:334[1v];[0v][1v]overlay=0:0[outv]\" -map \"[outv]\" -map 0:a -c:a copy -c:v libx264 -crf 23 -preset veryfast $outputVideo"
+  echo $cmd
+  eval $cmd
+}

@@ -348,6 +348,9 @@ mergeInApp() {
   echo "-------------------"
   eval $CMD
 
+
+#将60*80的小视频嵌入到480*640的大视频的右半部分并填充
+CMDD="ffmpeg -i $iRESULT_VIDEO -i $iRIGHT_VIDEO -filter_complex \"[0:v]scale=480:640[0v];[1:v]scale=60:80[1v];[0v][1v]overlay=420:280[outv]\" -map \"[outv]\" -map 0:a -c:a copy -c:v libx264 -crf 23 -preset veryfast $iRESULT_VIDEO"
   if [ $? -ne 0 ]; then
     echo "mergeInApp failed"
     exit 1
