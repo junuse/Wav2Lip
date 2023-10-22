@@ -413,8 +413,9 @@ function coverVideo() {
 #splitMp3ByTime 184_we.mp3 lsnjy15t4p 07:54 14:15 21:14
 function splitMp3ByTime() {
   sourceAudio=$1
-  dstAudioPrefix=$2
-  shift 2
+  paperId=$2
+  testId=$3
+  shift 3
   #将剩余参数转换为数组
   timeArray=($@)
   #数组前面加一个元素00:00
@@ -439,7 +440,7 @@ function splitMp3ByTime() {
       endTime=${timeArray[$(($i + 1))]}
     fi
     #输出文件名
-    outputAudio=$dstAudioPrefix$(($i + 1))".mp3"
+    outputAudio="lsnjy"$paperId"t"$testId"p"$(($i + 1))".mp3"
     #ffmpeg -i input.mp3 -ss 00:00:00 -to 00:00:10 -c copy output.mp3
     cmd="ffmpeg -i $sourceAudio -ss $startTime -to $endTime -c copy $outputAudio"
     echo $cmd
